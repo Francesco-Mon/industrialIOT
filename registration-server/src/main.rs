@@ -4,11 +4,10 @@ use std::io::{self, BufReader};
 use std::net::SocketAddr;
 use std::path::Path;
 use std::sync::Arc;
-
-use axum::{response::IntoResponse, routing::get, Router};
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use axum::{routing::get, Router};
 use etcd_client::Client;
 use rustls_pemfile::{certs, pkcs8_private_keys};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufStream};
 use tokio::net::{TcpListener, TcpStream};
 use tokio_rustls::rustls::{self, Certificate, PrivateKey};
 use tokio_rustls::server::TlsStream;
@@ -129,44 +128,57 @@ async fn handle_new_connection(stream: TcpStream, peer_addr: SocketAddr, accepto
 // --- Gestione dei comandi su una connessione stabilita ---
 #[instrument(skip(stream, etcd), fields(device_id = %device_id))]
 async fn handle_commands(mut stream: TlsStream<TcpStream>, device_id: String, etcd: &mut Client) {
-    info!("In attesa di comandi...");
-    let mut reader = BufStream::new(&mut stream);
-    let mut line = String::new();
-
+    info!("In attesa di comandi binari...");
+    
     loop {
-        line.clear();
-        match reader.read_line(&mut line).await {
-            Ok(0) => {
-                info!("Connessione chiusa dal client.");
+        // 1. Leggi i 4 byte della lunghezza del messaggio
+        let len = match stream.read_u32().await {
+            Ok(len) => len as usize,
+            Err(_) => {
+                info!("Connessione chiusa o errore di lettura lunghezza.");
                 break;
             }
-            Ok(_) => {
-                let command = line.trim();
-                info!(%command, "Comando ricevuto.");
-                let response = match serde_json::from_str::<CommandRequest>(command) {
-                    Ok(req) if req.command == "REGISTER" => handle_registration(device_id.clone(), etcd).await,
-                    Ok(req) if req.command == "HEARTBEAT" => handle_heartbeat(device_id.clone(), etcd).await,
-                    Ok(req) => {
-                        warn!(unsupported_command = %req.command, "Comando non supportato.");
-                        CommandResponse { status: "error".to_string(), message: "Comando non supportato".to_string() }
-                    }
-                    Err(e) => {
-                        warn!(error = %e, raw_command = command, "Comando JSON non valido.");
-                        CommandResponse { status: "error".to_string(), message: "Comando JSON non valido".to_string() }
-                    },
-                };
-                let response_json = serde_json::to_string(&response).unwrap() + "\n";
-                if let Err(e) = reader.get_mut().write_all(response_json.as_bytes()).await {
-                    error!(error = %e, "Errore di scrittura risposta.");
-                    break;
-                }
-                reader.get_mut().flush().await.ok();
-                info!(status = %response.status, "Risposta inviata.");
+        };
+
+        // Un semplice controllo di sicurezza per evitare messaggi enormi
+        if len > 1024 * 1024 { // 1 MB
+            error!(message_len = len, "Messaggio troppo grande, chiusura connessione.");
+            break;
+        }
+
+        // 2. Leggi esattamente `len` byte per il messaggio
+        let mut buffer = vec![0; len];
+        if let Err(_) = stream.read_exact(&mut buffer).await {
+            error!("Errore durante la lettura del corpo del messaggio.");
+            break;
+        }
+        
+        info!(bytes_read = len, "Comando binario ricevuto.");
+        
+        // 3. Deserializza il comando usando bincode
+        let response = match bincode::deserialize::<CommandRequest>(&buffer) {
+            Ok(req) if req.command == "REGISTER" => handle_registration(device_id.clone(), etcd).await,
+            Ok(req) if req.command == "HEARTBEAT" => handle_heartbeat(device_id.clone(), etcd).await,
+            Ok(req) => {
+                warn!(unsupported_command = %req.command, "Comando non supportato.");
+                CommandResponse { status: "error".to_string(), message: "Comando non supportato".to_string() }
             }
             Err(e) => {
-                error!(error = %e, "Errore di lettura, chiusura connessione.");
-                break;
-            }
+                warn!(error = %e, "Comando binario non valido.");
+                CommandResponse { status: "error".to_string(), message: "Comando binario non valido".to_string() }
+            },
+        };
+
+        // 4. Serializza la risposta e inviala
+        let response_bytes = bincode::serialize(&response).unwrap();
+        // Prima invia la lunghezza...
+        if stream.write_u32(response_bytes.len() as u32).await.is_err() {
+            break;
         }
+        // ...poi i dati.
+        if stream.write_all(&response_bytes).await.is_err() {
+            break;
+        }
+        info!(status = %response.status, "Risposta binaria inviata.");
     }
 }
