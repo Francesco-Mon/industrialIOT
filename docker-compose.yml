@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Servizio 1: etcd
+  etcd:
+    image: gcr.io/etcd-development/etcd:v3.5.5
+    container_name: etcd-compose
+    command:
+      - /usr/local/bin/etcd
+      - --name=etcd0
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-client-urls=http://0.0.0.0:2379
+    networks:
+      - app-network
+
+  # Servizio 2: il nostro server
+  registration-server:
+    image: registration-server:latest # L'immagine che abbiamo costruito
+    container_name: registration-server-compose
+    depends_on:
+      - etcd # Parte solo dopo etcd
+    ports:
+      - "8443:8443" # Mappa la porta del container a quella del tuo Mac
+    environment:
+      # Qui impostiamo la variabile che il nostro server leggerà
+      ETCD_ENDPOINT: "http://etcd:2379"
+      RUST_LOG: info
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

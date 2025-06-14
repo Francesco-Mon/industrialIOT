@@ -1,0 +1,1 @@
+/Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-client/target/debug/registration-client: /Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-client/src/main.rs
