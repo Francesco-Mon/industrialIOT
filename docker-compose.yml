@@ -1,10 +1,12 @@
-version: '3.8'
+# Questo file definisce e orchestra i servizi della nostra applicazione.
+# La direttiva 'version' è obsoleta, quindi la omettiamo.
 
 services:
-  # Servizio 1: etcd
+  # Servizio 1: Il nostro database/registro distribuito etcd
   etcd:
     image: gcr.io/etcd-development/etcd:v3.5.5
     container_name: etcd-compose
+    # Comando per avviare etcd in modo che sia raggiungibile all'interno della rete Docker
     command:
       - /usr/local/bin/etcd
       - --name=etcd0
@@ -12,22 +14,46 @@ services:
       - --listen-client-urls=http://0.0.0.0:2379
     networks:
       - app-network
+    # Aggiungiamo un healthcheck per assicurarci che etcd sia pronto.
+    healthcheck:
+      # CORREZIONE: Chiamiamo etcdctl direttamente e impostiamo la variabile d'ambiente
+      # per la versione 3 dell'API, che è la pratica migliore.
+      test: ["CMD-SHELL", "ETCDCTL_API=3 etcdctl --endpoints=http://127.0.0.1:2379 endpoint health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s # Dà a etcd 10 secondi per avviarsi prima di iniziare i controlli
 
-  # Servizio 2: il nostro server
+  # Servizio 2: Il nostro server di registrazione dispositivi
   registration-server:
-    image: registration-server:latest # L'immagine che abbiamo costruito
+    # Usiamo l'immagine che abbiamo costruito localmente
+    image: registration-server:latest
     container_name: registration-server-compose
+    # `depends_on` con la condizione `service_healthy` assicura che il nostro
+    # server parta solo dopo che etcd è stato avviato e ha passato il suo healthcheck.
     depends_on:
-      - etcd # Parte solo dopo etcd
+      etcd:
+        condition: service_healthy
     ports:
-      - "8443:8443" # Mappa la porta del container a quella del tuo Mac
+      # Mappiamo le porte dal container al nostro computer (host)
+      - "8443:8443" # Porta per la comunicazione con i dispositivi
+      - "9000:9000" # Porta per l'health check
     environment:
-      # Qui impostiamo la variabile che il nostro server leggerà
+      # Passiamo la configurazione al nostro server tramite variabili d'ambiente
       ETCD_ENDPOINT: "http://etcd:2379"
+      # Impostiamo il livello di log. 'info' è un buon default.
       RUST_LOG: info
     networks:
       - app-network
+    # Definiamo come Docker deve controllare se il nostro servizio è in salute.
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 5s
 
+# Definiamo la rete privata che i nostri servizi useranno per comunicare
 networks:
   app-network:
     driver: bridge

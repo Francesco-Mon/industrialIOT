@@ -28,7 +28,7 @@ RUN cargo build --release
 FROM debian:bookworm-slim AS final
 
 # Installiamo i certificati CA del sistema operativo, una buona pratica per le connessioni in uscita.
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
 # Copiamo solo il file eseguibile compilato dallo stage 'builder'.
 COPY --from=builder /usr/src/app/target/release/registration-server /usr/local/bin/
