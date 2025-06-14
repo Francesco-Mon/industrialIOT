@@ -3,6 +3,7 @@ name = "registration-server"
 version = "0.1.0"
 edition = "2021"
 
+# Le dipendenze che servono alla tua applicazione per funzionare
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 tokio-rustls = "0.24"
@@ -17,3 +18,4 @@ axum = "0.6"
 hyper = { version = "0.14", features = ["full"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+

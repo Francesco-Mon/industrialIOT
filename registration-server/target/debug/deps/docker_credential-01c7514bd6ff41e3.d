@@ -1,0 +1,9 @@
+/Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-server/target/debug/deps/libdocker_credential-01c7514bd6ff41e3.rmeta: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/config.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/helper.rs
+
+/Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-server/target/debug/deps/libdocker_credential-01c7514bd6ff41e3.rlib: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/config.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/helper.rs
+
+/Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-server/target/debug/deps/docker_credential-01c7514bd6ff41e3.d: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/config.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/helper.rs
+
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/lib.rs:
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/config.rs:
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/docker_credential-1.3.2/src/helper.rs:

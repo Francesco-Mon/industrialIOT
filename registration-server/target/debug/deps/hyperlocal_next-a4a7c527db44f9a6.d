@@ -1,0 +1,9 @@
+/Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-server/target/debug/deps/libhyperlocal_next-a4a7c527db44f9a6.rmeta: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/client.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/uri.rs
+
+/Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-server/target/debug/deps/libhyperlocal_next-a4a7c527db44f9a6.rlib: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/client.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/uri.rs
+
+/Users/francescomontecucco/Desktop/industrialIOT/secure-device-system/registration-server/target/debug/deps/hyperlocal_next-a4a7c527db44f9a6.d: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/client.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/uri.rs
+
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/lib.rs:
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/client.rs:
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyperlocal-next-0.9.0/src/uri.rs:
