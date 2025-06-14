@@ -2,27 +2,16 @@ use crate::types::{CommandResponse, DeviceInfo};
 use chrono::Utc;
 use etcd_client::Client;
 use tracing::{error, info, instrument, warn};
+use etcd_client::{Compare, CompareOp, Txn, TxnOp};
 
 // --- Gestione specifica dei comandi (con logging) ---
 
 #[instrument(skip(etcd), fields(device_id = %device_id))]
 pub async fn handle_registration(device_id: String, etcd: &mut Client) -> CommandResponse {
     let key = format!("devices/{}", device_id);
-    info!("Processo di registrazione...");
-    
-    let get_resp = match etcd.get(key.clone(), None).await {
-        Ok(resp) => resp,
-        Err(e) => {
-             error!(error = %e, "Errore etcd in lettura.");
-             return CommandResponse { status: "error".to_string(), message: "Errore interno del server.".to_string() };
-        }
-    };
+    info!("Processo di registrazione atomica...");
 
-    if !get_resp.kvs().is_empty() {
-        info!("Dispositivo già registrato.");
-        return CommandResponse { status: "ok".to_string(), message: "Dispositivo già registrato.".to_string() };
-    }
-
+    // Prepara i dati per il nuovo dispositivo
     let now = Utc::now();
     let device_info = DeviceInfo {
         device_id: device_id.clone(),
@@ -30,16 +19,28 @@ pub async fn handle_registration(device_id: String, etcd: &mut Client) -> Comman
         first_seen: now,
         last_seen: now,
     };
-    
     let value = serde_json::to_string(&device_info).unwrap();
+
+    // Crea una transazione atomica:
+    // "SE la versione della chiave è 0 (cioè non esiste), ALLORA esegui l'operazione PUT"
+    let txn = Txn::new()
+        .when(vec![Compare::version(key.clone(), CompareOp::Equal, 0)])
+        .and_then(vec![TxnOp::put(key, value, None)]);
     
-    match etcd.put(key, value, None).await {
-        Ok(_) => {
-            info!("Dispositivo registrato con successo in etcd.");
-            CommandResponse { status: "ok".to_string(), message: "Registrazione completata con successo.".to_string() }
+    // Esegui la transazione
+    match etcd.txn(txn).await {
+        Ok(txn_resp) => {
+            // `succeeded` è true se la condizione 'when' è stata soddisfatta
+            if txn_resp.succeeded() {
+                info!("Dispositivo registrato con successo in etcd via transazione.");
+                CommandResponse { status: "ok".to_string(), message: "Registrazione completata con successo.".to_string() }
+            } else {
+                info!("Dispositivo già esistente, registrazione saltata.");
+                CommandResponse { status: "ok".to_string(), message: "Dispositivo già registrato.".to_string() }
+            }
         },
         Err(e) => {
-            error!(error = %e, "Errore etcd in scrittura.");
+            error!(error = %e, "Errore etcd durante la transazione.");
             CommandResponse { status: "error".to_string(), message: "Errore interno del server.".to_string() }
         }
     }

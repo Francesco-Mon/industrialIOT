@@ -30,6 +30,32 @@ fn load_private_key(path: &Path) -> io::Result<PrivateKey> {
     pkcs8_private_keys(&mut key_file).map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "invalid private key")).map(|mut keys| PrivateKey(keys.remove(0)))
 }
 
+// Nuova funzione per connettersi a etcd con tentativi multipli
+async fn connect_to_etcd_with_retries(endpoint: &str) -> Client {
+    let mut retries = 5;
+    let mut delay = tokio::time::Duration::from_secs(1);
+    loop {
+        info!(attempt = (6 - retries), "Tentativo di connessione a etcd...");
+        match Client::connect([endpoint], None).await {
+            Ok(client) => {
+                info!("Connesso a etcd con successo.");
+                return client;
+            }
+            Err(e) => {
+                retries -= 1;
+                if retries == 0 {
+                    error!(error = %e, "Falliti tutti i tentativi di connessione a etcd. Uscita.");
+                    panic!("Impossibile connettersi a etcd.");
+                }
+                warn!(error = %e, seconds_to_wait = delay.as_secs(), "Connessione a etcd fallita. Riprovo...");
+                tokio::time::sleep(delay).await;
+                // Aumenta il ritardo per il prossimo tentativo (exponential backoff)
+                delay *= 2;
+            }
+        }
+    }
+}
+
 // --- Funzione Principale ---
 #[tokio::main]
 async fn main() -> io::Result<()> {
@@ -72,9 +98,7 @@ async fn main_server() {
     let acceptor = TlsAcceptor::from(tls_config);
 
     let etcd_endpoint = env::var("ETCD_ENDPOINT").unwrap_or_else(|_| "http://127.0.0.1:2379".to_string());
-    info!(endpoint = %etcd_endpoint, "Connessione a etcd...");
-    let etcd_client = Client::connect([etcd_endpoint], None).await.expect("Connessione a etcd fallita.");
-    info!("Connesso a etcd con successo.");
+    let etcd_client = connect_to_etcd_with_retries(&etcd_endpoint).await;
 
     let listener = TcpListener::bind(&addr).await.expect("Binding della porta principale fallito.");
     info!(address = %addr, "Server principale in ascolto.");
