@@ -1,0 +1,1 @@
+/Users/francescomontecucco/Desktop/industrialIOT\ project/secure-device-system/load-tester/target/release/registration-client: /Users/francescomontecucco/Desktop/industrialIOT\ project/secure-device-system/load-tester/src/main.rs
