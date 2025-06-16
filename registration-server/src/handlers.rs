@@ -4,14 +4,11 @@ use etcd_client::Client;
 use tracing::{error, info, instrument, warn};
 use etcd_client::{Compare, CompareOp, Txn, TxnOp};
 
-// --- Gestione specifica dei comandi (con logging) ---
-
 #[instrument(skip(etcd), fields(device_id = %device_id))]
 pub async fn handle_registration(device_id: String, etcd: &mut Client) -> CommandResponse {
     let key = format!("devices/{}", device_id);
     info!("Processo di registrazione atomica...");
 
-    // Prepara i dati per il nuovo dispositivo
     let now = Utc::now();
     let device_info = DeviceInfo {
         device_id: device_id.clone(),
@@ -21,16 +18,12 @@ pub async fn handle_registration(device_id: String, etcd: &mut Client) -> Comman
     };
     let value = serde_json::to_string(&device_info).unwrap();
 
-    // Crea una transazione atomica:
-    // "SE la versione della chiave è 0 (cioè non esiste), ALLORA esegui l'operazione PUT"
     let txn = Txn::new()
         .when(vec![Compare::version(key.clone(), CompareOp::Equal, 0)])
         .and_then(vec![TxnOp::put(key, value, None)]);
     
-    // Esegui la transazione
     match etcd.txn(txn).await {
         Ok(txn_resp) => {
-            // `succeeded` è true se la condizione 'when' è stata soddisfatta
             if txn_resp.succeeded() {
                 info!("Dispositivo registrato con successo in etcd via transazione.");
                 CommandResponse { status: "ok".to_string(), message: "Registrazione completata con successo.".to_string() }
@@ -84,24 +77,18 @@ pub async fn handle_heartbeat(device_id: String, etcd: &mut Client) -> CommandRe
     }
 }
 
-// ===================================================================
-//  MODULO DI UNIT TEST
-// ===================================================================
-// Questo blocco viene compilato e eseguito solo con `cargo test`
+//  MODULO DI UNIT TEST ( `cargo test` )
+
 #[cfg(test)]
 mod tests {
-    // Importiamo le struct e le funzioni necessarie dal modulo padre
     use super::*;
     use crate::types::{CommandResponse, DeviceInfo};
 
-    // Un test molto semplice per assicurarsi che l'ambiente di test funzioni.
     #[test]
     fn basic_assertion() {
         assert_eq!(2 + 2, 4, "La matematica di base dovrebbe funzionare!");
     }
 
-    // Testiamo che la nostra struct `CommandResponse` si possa creare
-    // e che i suoi campi siano corretti. Questo è un vero unit test.
     #[test]
     fn test_command_response_creation() {
         let status = "ok".to_string();
@@ -116,7 +103,6 @@ mod tests {
         assert_eq!(response.message, message);
     }
     
-    // Testiamo la creazione della struct `DeviceInfo`.
     #[test]
     fn test_device_info_creation() {
         let now = Utc::now();

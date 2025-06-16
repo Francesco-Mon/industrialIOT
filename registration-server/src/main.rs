@@ -16,10 +16,8 @@ use tracing::{error, info, instrument, warn};
 use tracing_subscriber::{prelude::*, EnvFilter};
 use x509_parser::prelude::*;
 
-// Importa la logica di business e i tipi dalla nostra libreria
 use registration_server::{handle_heartbeat, handle_registration, CommandRequest, CommandResponse};
 
-// --- Funzioni Helper TLS ---
 fn load_certs(path: &Path) -> io::Result<Vec<Certificate>> {
     let mut cert_file = BufReader::new(File::open(path)?);
     certs(&mut cert_file).map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "invalid cert")).map(|mut certs| certs.drain(..).map(Certificate).collect())
@@ -30,7 +28,6 @@ fn load_private_key(path: &Path) -> io::Result<PrivateKey> {
     pkcs8_private_keys(&mut key_file).map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "invalid private key")).map(|mut keys| PrivateKey(keys.remove(0)))
 }
 
-// Nuova funzione per connettersi a etcd con tentativi multipli
 async fn connect_to_etcd_with_retries(endpoint: &str) -> Client {
     let mut retries = 5;
     let mut delay = tokio::time::Duration::from_secs(1);
@@ -49,14 +46,12 @@ async fn connect_to_etcd_with_retries(endpoint: &str) -> Client {
                 }
                 warn!(error = %e, seconds_to_wait = delay.as_secs(), "Connessione a etcd fallita. Riprovo...");
                 tokio::time::sleep(delay).await;
-                // Aumenta il ritardo per il prossimo tentativo (exponential backoff)
                 delay *= 2;
             }
         }
     }
 }
 
-// --- Funzione Principale ---
 #[tokio::main]
 async fn main() -> io::Result<()> {
     tracing_subscriber::registry().with(tracing_subscriber::fmt::layer().json()).with(EnvFilter::from_default_env()).init();
@@ -70,7 +65,6 @@ async fn main() -> io::Result<()> {
     Ok(())
 }
 
-// --- Server HTTP per l'Health Check ---
 async fn health_check_server() {
     let app = Router::new().route("/health", get(|| async { "OK" }));
     let addr = SocketAddr::from(([0, 0, 0, 0], 9000));
@@ -80,7 +74,6 @@ async fn health_check_server() {
     }
 }
 
-// --- Server Principale TCP/TLS ---
 async fn main_server() {
     let addr: SocketAddr = "0.0.0.0:8443".parse().unwrap();
     
@@ -117,7 +110,6 @@ async fn main_server() {
     }
 }
 
-// --- Gestione di una singola nuova connessione ---
 #[instrument(skip_all, fields(peer_addr = %peer_addr))]
 async fn handle_new_connection(stream: TcpStream, peer_addr: SocketAddr, acceptor: TlsAcceptor, mut etcd_client: Client) {
     info!("Nuova connessione ricevuta.");
@@ -149,13 +141,11 @@ async fn handle_new_connection(stream: TcpStream, peer_addr: SocketAddr, accepto
     handle_commands(stream, device_id, &mut etcd_client).await;
 }
 
-// --- Gestione dei comandi su una connessione stabilita ---
 #[instrument(skip(stream, etcd), fields(device_id = %device_id))]
 async fn handle_commands(mut stream: TlsStream<TcpStream>, device_id: String, etcd: &mut Client) {
     info!("In attesa di comandi binari...");
     
     loop {
-        // 1. Leggi i 4 byte della lunghezza del messaggio
         let len = match stream.read_u32().await {
             Ok(len) => len as usize,
             Err(_) => {
@@ -164,13 +154,11 @@ async fn handle_commands(mut stream: TlsStream<TcpStream>, device_id: String, et
             }
         };
 
-        // Un semplice controllo di sicurezza per evitare messaggi enormi
-        if len > 1024 * 1024 { // 1 MB
+        if len > 1024 * 1024 {
             error!(message_len = len, "Messaggio troppo grande, chiusura connessione.");
             break;
         }
 
-        // 2. Leggi esattamente `len` byte per il messaggio
         let mut buffer = vec![0; len];
         if let Err(_) = stream.read_exact(&mut buffer).await {
             error!("Errore durante la lettura del corpo del messaggio.");
@@ -179,7 +167,6 @@ async fn handle_commands(mut stream: TlsStream<TcpStream>, device_id: String, et
         
         info!(bytes_read = len, "Comando binario ricevuto.");
         
-        // 3. Deserializza il comando usando bincode
         let response = match bincode::deserialize::<CommandRequest>(&buffer) {
             Ok(req) if req.command == "REGISTER" => handle_registration(device_id.clone(), etcd).await,
             Ok(req) if req.command == "HEARTBEAT" => handle_heartbeat(device_id.clone(), etcd).await,
@@ -193,13 +180,10 @@ async fn handle_commands(mut stream: TlsStream<TcpStream>, device_id: String, et
             },
         };
 
-        // 4. Serializza la risposta e inviala
         let response_bytes = bincode::serialize(&response).unwrap();
-        // Prima invia la lunghezza...
         if stream.write_u32(response_bytes.len() as u32).await.is_err() {
             break;
         }
-        // ...poi i dati.
         if stream.write_all(&response_bytes).await.is_err() {
             break;
         }
