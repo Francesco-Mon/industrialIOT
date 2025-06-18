@@ -1,0 +1,9 @@
+/Users/francescomontecucco/Desktop/industrialIOT project/secure-device-system/registration-client/target/debug/deps/libpotential_utf-942b9a325e44f392.rmeta: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/uchar.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/ustr.rs
+
+/Users/francescomontecucco/Desktop/industrialIOT project/secure-device-system/registration-client/target/debug/deps/libpotential_utf-942b9a325e44f392.rlib: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/uchar.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/ustr.rs
+
+/Users/francescomontecucco/Desktop/industrialIOT project/secure-device-system/registration-client/target/debug/deps/potential_utf-942b9a325e44f392.d: /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/lib.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/uchar.rs /Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/ustr.rs
+
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/lib.rs:
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/uchar.rs:
+/Users/francescomontecucco/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/potential_utf-0.1.2/src/ustr.rs:
