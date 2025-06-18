@@ -1,7 +1,4 @@
-# Questo file definisce e orchestra l'intera architettura a 3 servizi.
-
 services:
-  # Servizio 1: Il nostro database/registro distribuito
   etcd:
     image: gcr.io/etcd-development/etcd:v3.5.5
     container_name: etcd-compose
@@ -19,27 +16,21 @@ services:
       retries: 5
       start_period: 10s
 
-  # Servizio 2: La nostra Certificate Authority online
-  ca-server:
-    # Costruisce l'immagine dal Dockerfile specifico
++  ca-server:
     build:
       context: .
       dockerfile: ca-server/Dockerfile
     container_name: ca-server-compose
-    # Parte solo dopo che etcd è in salute
     depends_on:
       etcd:
         condition: service_healthy
     ports:
-      # Espone la porta del servizio CA per il client
       - "8000:8000"
     environment:
-      # Passiamo la configurazione tramite variabili d'ambiente
       ETCD_ENDPOINT: "http://etcd:2379"
       RUST_LOG: info
     networks:
       - app-network
-    # Aggiungiamo un healthcheck anche per la CA
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -47,13 +38,11 @@ services:
       retries: 3
       start_period: 10s
 
-  # Servizio 3: Il nostro server di registrazione dispositivi
   registration-server:
     build:
       context: .
       dockerfile: registration-server/Dockerfile
     container_name: registration-server-compose
-    # Parte solo dopo che etcd è in salute
     depends_on:
       etcd:
         condition: service_healthy
@@ -72,7 +61,6 @@ services:
       retries: 3
       start_period: 5s
 
-# Definiamo la rete privata che i nostri servizi useranno per comunicare
 networks:
   app-network:
     driver: bridge

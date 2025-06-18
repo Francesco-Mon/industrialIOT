@@ -9,8 +9,6 @@ pub async fn handle_registration(device_id: String, etcd: &mut Client) -> Comman
     let info_key = format!("devices/info/{}", device_id);
     info!("Processo di registrazione/verifica...");
     
-    // 1. Controlla se il certificato del dispositivo è stato emesso dalla nostra CA
-    // (verificando la sua esistenza in etcd, dove la CA lo ha salvato).
     match etcd.get(cert_key, None).await {
         Ok(resp) if resp.kvs().is_empty() => {
             warn!("Tentativo di registrazione con un certificato non emesso dalla nostra CA.");
@@ -20,19 +18,16 @@ pub async fn handle_registration(device_id: String, etcd: &mut Client) -> Comman
              error!(error = %e, "Errore etcd in lettura certificato.");
              return CommandResponse { status: "error".to_string(), message: "Errore interno.".to_string() };
         }
-        _ => {} // Certificato valido trovato, procedi.
+        _ => {}
     }
 
-    // 2. Controlla se il dispositivo ha già completato la registrazione (ha un record info)
     if let Ok(resp) = etcd.get(info_key.clone(), None).await {
         if !resp.kvs().is_empty() {
             info!("Dispositivo già registrato, procedo con heartbeat.");
-            // Se già registrato, consideriamo l'azione un successo e aggiorniamo il suo stato
             return handle_heartbeat(device_id, etcd).await;
         }
     }
     
-    // 3. Se il certificato è valido ma non c'è un record info, lo creiamo.
     info!("Primo contatto da dispositivo autorizzato. Creazione record informativo...");
     let now = Utc::now();
     let device_info = DeviceInfo {
@@ -54,7 +49,7 @@ pub async fn handle_registration(device_id: String, etcd: &mut Client) -> Comman
 
 #[instrument(skip(etcd), fields(device_id = %device_id))]
 pub async fn handle_heartbeat(device_id: String, etcd: &mut Client) -> CommandResponse {
-    let key = format!("devices/info/{}", device_id); // Lavoriamo sempre sui record 'info'
+    let key = format!("devices/info/{}", device_id);
     
     let get_resp = match etcd.get(key.clone(), None).await {
         Ok(resp) => resp,
