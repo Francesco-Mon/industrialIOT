@@ -14,8 +14,6 @@ Il sistema è basato su un'architettura a microservizi, composta da quattro comp
 4.  **etcd**: Un data store chiave-valore distribuito che funge da "source of truth" per il sistema. Memorizza sia i certificati emessi dalla CA sia i record di stato (metadati, attività) dei dispositivi gestiti dal Registration Server.
 
  
-*(Nota: Si raccomanda di sostituire questo link con un diagramma reale creato con strumenti come [diagrams.net](http://diagrams.net))*
-
 ## Workflow di Provisioning Dinamico
 
 Il cuore del sistema è il suo flusso di onboarding "zero-touch":
